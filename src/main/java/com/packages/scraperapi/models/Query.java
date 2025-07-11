@@ -16,7 +16,7 @@ public class Query {
         return budgetAmount;
     }
 
-    public void setBudgetAmount(double   budgetAmount) {
+    public void setBudgetAmount(double budgetAmount) {
         this.budgetAmount = budgetAmount;
     }
 }

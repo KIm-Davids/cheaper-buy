@@ -13,8 +13,20 @@ public class ComparePricesEndpointTest {
     public void testToSeeIfJumiaApiCallResponds(){
         ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
         Query query  = new Query();
+        query.setQuery("iphone xs max");
+        query.setBudgetAmount(250000);
+        List<ProductResult> result = services.scrapeJumia(query);
+        System.out.println(result);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testToSeeIfJijiApiCallResponds(){
+        ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
+        Query query  = new Query();
         query.setQuery("Iphone xsmax phone");
-        ProductResult result = services.scrapeJumia(query);
+        query.setBudgetAmount(250000);
+        List<ProductResult> result = services.scrapeJiji(query);
         System.out.println(result);
         assertNotNull(result);
     }
@@ -23,8 +35,9 @@ public class ComparePricesEndpointTest {
     public void testToSeeIfKongaApiCallResponds(){
         ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
         Query query  = new Query();
-        query.setQuery("Iphone xsmax phone");
-        List<ProductResult> result = services.scrapeJiji(query);
+        query.setQuery("samsung");
+        query.setBudgetAmount(250000);
+        List<ProductResult> result = services.scrapeKonga(query);
         System.out.println(result);
         assertNotNull(result);
     }
