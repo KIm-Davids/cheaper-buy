@@ -1,5 +1,6 @@
 package com.packages.scraperapi.services;
 
+import com.microsoft.playwright.*;
 import com.packages.scraperapi.models.ProductResult;
 import com.packages.scraperapi.models.Query;
 //import com.packages.scraperapi.utilities.BestMatchingProductResultImpl;
@@ -203,80 +204,132 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
         return productList;
     }
 
-//    Document doc = Jsoup.connect("https://www.konga.com").timeout(10000).get();
-//    Elements productTitles = doc.select("h3.ListingCard_productTitle__9Kzxv");
+//    @Override
+//    public List<ProductResult> scrapeKonga(Query query) {
+//        WebDriverManager.chromedriver().setup();
+//        WebDriver driver = new ChromeDriver();
+//        List<ProductResult> results = new ArrayList<>();
+//        int page = 1;
+//        int maxPages = 5;
 //
-//for (Element title : productTitles) {
-//        System.out.println(title.text());
+//        while (page <= maxPages) {
+//            String searchUrl = "https://www.konga.com/search?search=" + URLEncoder.encode(query.getQuery(), StandardCharsets.UTF_8) + "&page=" + page;
+//            driver.get(searchUrl);
+//
+//            try {
+//                Thread.sleep(5000); // Wait for page to load
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//
+//            Document doc = Jsoup.parse(driver.getPageSource());
+//            Elements products = doc.select("li.List_listItem__KlvU2");
+//
+//            if (products.isEmpty()) break;
+//
+//            for (Element product : products) {
+//                try {
+//                    // Extract title
+//                    String title = product.select("h3.ListingCard_productTitle__9Kzxv").text();
+//
+//                    // Extract price
+//                    String price = product.select("span.shared_initialPrice__cTRSe").text();
+//
+//                    // Extract link
+//                    String relativeLink = product.select("a").attr("href");
+//                    String fullLink = "https://www.konga.com" + relativeLink;
+//
+//                    // Extract image
+//                    Element img = product.selectFirst("img");
+//                    String imageUrl = img != null ? img.attr("src") : "Image not found";
+//
+//                    System.out.println("Title: " + title);
+//                    System.out.println("Price: " + price);
+//                    System.out.println("Link: " + fullLink);
+//                    System.out.println("Image URL: " + imageUrl);
+//                    System.out.println("----------------------------------------");
+//
+//                    double numericPrice = extractNumericPrice(price);
+//                    if (numericPrice <= query.getBudgetAmount()) {
+//                        results.add(new ProductResult("konga", title, fullLink, imageUrl, price, ""));
+//                    }
+//
+//                } catch (Exception ex) {
+//                    ex.printStackTrace();
+//                }
+//            }
+//
+//            page++;
+//        }
+//
+//        driver.quit();
+//
+//        // Sort results by price
+//        results.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+//
+//        return results;
 //    }
-
-
-    @Override
     public List<ProductResult> scrapeKonga(Query query) {
-        WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver();
+
         List<ProductResult> results = new ArrayList<>();
         int page = 1;
         int maxPages = 5;
 
-        while (page <= maxPages) {
-            String searchUrl = "https://www.konga.com/search?search=" + URLEncoder.encode(query.getQuery(), StandardCharsets.UTF_8) + "&page=" + page;
-            driver.get(searchUrl);
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            BrowserContext context = browser.newContext();
+            Page pageObj = context.newPage();
 
-            try {
-                Thread.sleep(5000); // Wait for page to load
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            while (page <= maxPages) {
+                String searchUrl = "https://www.konga.com/search?search=" + URLEncoder.encode(query.getQuery(), StandardCharsets.UTF_8) + "&page=" + page;
+                pageObj.navigate(searchUrl);
 
-            Document doc = Jsoup.parse(driver.getPageSource());
-            Elements products = doc.select("li.List_listItem__KlvU2");
+                // Wait for page to load
+                pageObj.waitForSelector("li.List_listItem__KlvU2");
 
-            if (products.isEmpty()) break;
+                // Parse with Jsoup
+                String content = pageObj.content();
+                Document doc = Jsoup.parse(content);
+                Elements products = doc.select("li.List_listItem__KlvU2");
 
-            for (Element product : products) {
-                try {
-                    // Extract title
-                    String title = product.select("h3.ListingCard_productTitle__9Kzxv").text();
+                if (products.isEmpty()) break;
 
-                    // Extract price
-                    String price = product.select("span.shared_price__gnso_").text();
+                for (Element product : products) {
+                    try {
+                        String title = product.select("h3.ListingCard_productTitle__9Kzxv").text();
+                        String price = product.select("span.shared_initialPrice__cTRSe").text();
+                        String relativeLink = product.select("a").attr("href");
+                        String fullLink = "https://www.konga.com" + relativeLink;
 
-                    // Extract link
-                    String relativeLink = product.select("a").attr("href");
-                    String fullLink = "https://www.konga.com" + relativeLink;
+                        Element img = product.selectFirst("img");
+                        String imageUrl = img != null ? img.attr("src") : "Image not found";
 
-                    // Extract image
-                    Element img = product.selectFirst("img");
-                    String imageUrl = img != null ? img.attr("src") : "Image not found";
+                        System.out.println("Title: " + title);
+                        System.out.println("Price: " + price);
+                        System.out.println("Link: " + fullLink);
+                        System.out.println("Image URL: " + imageUrl);
+                        System.out.println("----------------------------------------");
 
-                    System.out.println("Title: " + title);
-                    System.out.println("Price: " + price);
-                    System.out.println("Link: " + fullLink);
-                    System.out.println("Image URL: " + imageUrl);
-                    System.out.println("----------------------------------------");
-
-                    double numericPrice = extractNumericPrice(price);
-                    if (numericPrice <= query.getBudgetAmount()) {
-                        results.add(new ProductResult("konga", title, fullLink, imageUrl, price, ""));
+                        double numericPrice = extractNumericPrice(price);
+                        if (numericPrice <= query.getBudgetAmount()) {
+                            results.add(new ProductResult("konga", title, fullLink, imageUrl, price, ""));
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
                 }
+
+                page++;
             }
 
-            page++;
+            browser.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        driver.quit();
-
-        // Sort results by price
         results.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
-
         return results;
     }
-
     @Override
     public ProductResult scrapeAliexpress(Query query) {
         return null;
