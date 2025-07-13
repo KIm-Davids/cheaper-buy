@@ -1,9 +1,9 @@
 package com.packages.scraperapi.services;
 
-import com.microsoft.playwright.*;
 import com.packages.scraperapi.models.ProductResult;
 import com.packages.scraperapi.models.Query;
 //import com.packages.scraperapi.utilities.BestMatchingProductResultImpl;
+import com.packages.scraperapi.repository.ProductRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -11,15 +11,27 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class ComparePricesServicesServicesImpl implements ComparePricesServicesInterface {
+@Service
+public class ComparePricesServicesImpl implements ComparePricesServicesInterface {
+
+    private final List<ProductResult> allResults = new ArrayList<>();
+
+    private final ProductRepository repository;
+    public ComparePricesServicesImpl(ProductRepository repository){
+        this.repository = repository;
+    }
 
     @Override
     public List<ProductResult> scrapeJiji(Query query) {
@@ -69,11 +81,6 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
                 // Image
                 Element imageTag = card.selectFirst("picture img");
                 String imageUrl = imageTag != null ? imageTag.attr("src") : "";
-
-                System.out.println("title" + title);
-                System.out.println("price" + price);
-                System.out.println("image" + imageUrl);
-                System.out.println("description" + description);
 
                 double numericPrice = extractNumericPrice(price);
                 if (numericPrice >= query.getBudgetAmount()) {
@@ -177,12 +184,6 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
                     String imageUrl = imgElement != null ? imgElement.attr("data-src") : "";
 
 
-                    System.out.println("title " + title);
-                    System.out.println("price " + price);
-                    System.out.println("link " + link);
-                    System.out.println("image " + imageUrl);
-                    System.out.println("description: ");
-
                     double numericPrice = extractNumericPrice(price);
                     if (numericPrice <= query.getBudgetAmount()) {
                         productList.add(new ProductResult("jumia", title, price, link, imageUrl, ""));
@@ -200,6 +201,7 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
 
         // Sort results by price
         productList.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+
 
         return productList;
     }
@@ -244,12 +246,6 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
                     String imageUrl = img != null ? img.attr("src") : "Image not found";
 
 
-                    System.out.println("Title: " + title);
-                    System.out.println("Price: " + price);
-                    System.out.println("Link: " + fullLink);
-                    System.out.println("Image URL: " + imageUrl);
-                    System.out.println("----------------------------------------");
-
                     double numericPrice = extractNumericPrice(price);
                     if (numericPrice <= query.getBudgetAmount()) {
                         results.add(new ProductResult("konga", title, fullLink, imageUrl, price, ""));
@@ -267,6 +263,7 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
 
         // Sort results by price
         results.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+
 
         return results;
     }
@@ -334,16 +331,77 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
 //        return results;
 //    }
 
-
     @Override
-    public ProductResult scrapeAliexpress(Query query) {
-        return null;
+    public List<ProductResult> scrapeKusnap(Query query) {
+        WebDriverManager.chromedriver().setup();
+        WebDriver driver = new ChromeDriver();
+        List<ProductResult> productList = new ArrayList<>();
+        int page = 1;
+        int maxPages = 5;
+
+        while (page <= maxPages) {
+            String searchUrl = "https://www.kusnap.com/search?q=" + query.getQuery().replace(" ", "+") + "&page=" + page;
+            driver.get(searchUrl);
+
+            try {
+                Thread.sleep(5000); // wait for JS-rendered content
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            Document doc = Jsoup.parse(driver.getPageSource());
+
+            // Select the anchor tag that wraps each product
+            Elements products = doc.select("a[href^=\"/product/\"]");
+
+            if (products.isEmpty()) break;
+
+            for (Element product : products) {
+                try {
+                    // Title
+                    String title = product.selectFirst("p[title]").text();
+
+                    // Price
+                    Element priceBlock = product.selectFirst("div.flex.flex-col.pb-2");
+                    String price = "";
+                    if (priceBlock != null) {
+                        Elements spans = priceBlock.select("span");
+                        if (!spans.isEmpty()) {
+                            price = spans.first().text();
+                        }
+                    }
+
+                    // Link
+                    String relativeLink = product.attr("href");
+                    String link = "https://www.kusnap.com" + relativeLink;
+
+                    // Image
+                    Element imgElement = product.selectFirst("img");
+                    String imageUrl = imgElement != null ? imgElement.attr("src") : "";
+
+                    // Debug
+
+                    double numericPrice = extractNumericPrice(price);
+                    if (numericPrice <= query.getBudgetAmount()) {
+                        productList.add(new ProductResult("kusnap", title, price, link, imageUrl, ""));
+                    }
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            page++;
+        }
+
+        driver.quit();
+
+        // Sort by price
+        productList.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+
+        return productList;
     }
 
-    @Override
-    public ProductResult scrapeAmazon(Query query) {
-        return null;
-    }
 
 //    @Override
 //    public List<ProductResult> scrapeJiji(Query query) {
@@ -389,6 +447,40 @@ public class ComparePricesServicesServicesImpl implements ComparePricesServicesI
 //    }
 
 
+
+    private List<ProductResult> filterByQueryAndBudget(List<ProductResult> productList, Query query) {
+        String searchQuery = query.getQuery().toLowerCase().trim();
+        double budget = query.getBudgetAmount();
+
+        return productList.stream()
+                .filter(p -> {
+                    String title = p.getTitle().toLowerCase();
+
+                    // Title must match search query (loosely)
+                    boolean matchesQuery = title.contains(searchQuery) || Arrays.stream(searchQuery.split(" "))
+                            .allMatch(word -> title.contains(word));
+
+                    // Price must match exactly
+                    double numericPrice = extractNumericPrice(p.getPrice());
+                    boolean exactPriceMatch = Double.compare(numericPrice, budget) == 0;
+
+                    return matchesQuery && exactPriceMatch;
+                })
+                .collect(Collectors.toList()); // No need to sort since all are exact match
+    }
+
+
+
+public List<ProductResult> getFilteredProducts(Query query) {
+    List<ProductResult> allResults = new ArrayList<>();
+
+    allResults.addAll(scrapeJumia(query));
+    allResults.addAll(scrapeKonga(query));
+    allResults.addAll(scrapeKusnap(query));
+    allResults.addAll(scrapeJiji(query));
+    repository.saveAll(allResults);
+    return filterByQueryAndBudget(allResults, query);
+}
 
     private static int extractNumericPrice(String priceText) {
         try {

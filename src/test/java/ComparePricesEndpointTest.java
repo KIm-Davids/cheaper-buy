@@ -1,17 +1,32 @@
 import com.packages.scraperapi.models.ProductResult;
 import com.packages.scraperapi.models.Query;
-import com.packages.scraperapi.services.ComparePricesServicesServicesImpl;
+import com.packages.scraperapi.repository.ProductRepository;
+import com.packages.scraperapi.services.ComparePricesServicesImpl;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
 
+@SpringBootTest
 public class ComparePricesEndpointTest {
+
+  private ComparePricesServicesImpl services;
+
+  @Before
+  public void setup(){
+      ProductRepository mockRepo = Mockito.mock(ProductRepository.class);
+      services = new ComparePricesServicesImpl(mockRepo);
+  }
+
 
     @Test
     public void testToSeeIfJumiaApiCallResponds(){
-        ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
         Query query  = new Query();
         query.setQuery("iphone xs max");
         query.setBudgetAmount(250000);
@@ -22,7 +37,6 @@ public class ComparePricesEndpointTest {
 
     @Test
     public void testToSeeIfJijiApiCallResponds(){
-        ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
         Query query  = new Query();
         query.setQuery("Iphone xsmax phone");
         query.setBudgetAmount(250000);
@@ -33,11 +47,30 @@ public class ComparePricesEndpointTest {
 
     @Test
     public void testToSeeIfKongaApiCallResponds(){
-        ComparePricesServicesServicesImpl services = new ComparePricesServicesServicesImpl();
         Query query  = new Query();
         query.setQuery("samsung");
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.scrapeKonga(query);
+        System.out.println(result);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testToSeeIfKusnapApiCallResponds(){
+        Query query  = new Query();
+        query.setQuery("iphone xs max");
+        query.setBudgetAmount(250000);
+        List<ProductResult> result = services.scrapeKusnap(query);
+        System.out.println(result);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testToSeeIfTheFilterWorks(){
+        Query query  = new Query();
+        query.setQuery("iphone xs max");
+        query.setBudgetAmount(250000);
+        List<ProductResult> result = services.getFilteredProducts(query);
         System.out.println(result);
         assertNotNull(result);
     }

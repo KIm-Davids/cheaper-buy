@@ -1,18 +1,21 @@
 package com.packages.scraperapi.models;
 
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.NoArgsConstructor;
+
+@Entity
+@NoArgsConstructor
 public class ProductResult {
-    public String platform;
-    public String title;
-    public String price;
-    public String link;
-    public String image;
-    public String description;
-
-
-
-    public String getImage() {
-        return image;
-    }
+    @Id
+    private Long id;
+    private String platform;
+    private String title;
+    private String price;
+    private String link;
+    private String image;
+    private String description;
 
     public ProductResult(String platform, String title, String price, String link, String image, String description) {
         this.platform = platform;
@@ -33,6 +36,10 @@ public class ProductResult {
                 ", image='" + image + '\'' +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    public String getImage() {
+        return image;
     }
 
     public String getPlatform() {
