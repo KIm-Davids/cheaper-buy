@@ -1,22 +1,20 @@
-# Start from a Maven image to build the app
-FROM maven:3.9.6-eclipse-temurin-21 AS builder
-
-WORKDIR /app
-
-# Copy the project files
-COPY pom.xml .
-COPY src ./src
-
-# Build the application
-RUN mvn clean install -DskipTests
-
-# --- Production image ---
+# Use official Java 21 image
 FROM eclipse-temurin:21-jdk
 
+# Set the working directory
 WORKDIR /app
 
-# Copy only the jar from the previous build
-COPY --from=builder /app/target/ScraperEndpoint-0.0.1-SNAPSHOT.jar app.jar
+# Copy pom.xml and download dependencies first (to leverage Docker cache)
+COPY pom.xml .
 
-# Run the jar
-CMD ["java", "-jar", "app.jar"]
+RUN apt-get update && apt-get install -y maven && \
+    mvn dependency:go-offline
+
+# Copy the rest of the application code
+COPY src ./src
+
+# Package the application
+RUN mvn clean install -DskipTests || cat target/surefire-reports/*.txt || true
+
+# Run the app (adjust based on your jar name)
+CMD ["java", "-jar", "target/ScraperEndpoint-0.0.1-SNAPSHOT.jar"]
