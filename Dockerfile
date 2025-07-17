@@ -1,26 +1,20 @@
-# Stage 1: Build the app with Maven
-FROM eclipse-temurin:21-jdk as build
-
-WORKDIR /app
-
-# Copy the Maven wrapper (if using)
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
-RUN ./mvnw dependency:go-offline
-
-# Copy the rest of the source code
-COPY src ./src
-
-# Build the app
-RUN ./mvnw clean package -DskipTests
-
-# Stage 2: Create a minimal runtime image
+# Use official Java 21 image
 FROM eclipse-temurin:21-jdk
 
+# Set the working directory
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+# Copy pom.xml and download dependencies first (to leverage Docker cache)
+COPY pom.xml .
 
-EXPOSE 8080
+RUN apt-get update && apt-get install -y maven && \
+    mvn dependency:go-offline
 
-CMD ["java", "-jar", "app.jar"]
+# Copy the rest of the application code
+COPY src ./src
+
+# Package the application
+RUN mvn clean install -DskipTests
+
+# Run the app (adjust based on your jar name)
+CMD ["java", "-jar", "target/ScraperEndpoint-0.0.1-SNAPSHOT.jar"]
