@@ -619,6 +619,4 @@ public List<ProductResult> getFilteredProducts(Query query) {
         // 6. If all fail, return empty list
 //        return productResults;
     }
-
-
 }
