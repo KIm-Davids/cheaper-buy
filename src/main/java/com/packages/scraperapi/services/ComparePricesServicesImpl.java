@@ -11,16 +11,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,7 +43,7 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
             driver.get(searchUrl);
 
             try {
-                Thread.sleep(4000); // Let the page load
+                Thread.sleep(1000); // Let the page load
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -83,14 +79,22 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
                 String imageUrl = imageTag != null ? imageTag.attr("src") : "";
 
                 double numericPrice = extractNumericPrice(price);
+
                 if (numericPrice >= query.getBudgetAmount()) {
                     ProductResult result = new ProductResult(
                             "jiji", title, price, fullLink, imageUrl, description
                     );
                     productResultList.add(result);
+                    if (productResultList.size() >= 20) break;
+
                 }
             }
 
+            productResultList.sort((a, b) -> {
+                double diffA = query.getBudgetAmount() - extractNumericPrice(a.getPrice());
+                double diffB = query.getBudgetAmount() - extractNumericPrice(b.getPrice());
+                return Double.compare(diffA, diffB);
+            });
 
 
             page++;
@@ -103,7 +107,6 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
         return productResultList;
     }
-
 
 //    @Override
 //    public ProductResult scrapeJumia(Query query) {
@@ -164,7 +167,7 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
             driver.get(searchUrl);
 
             try {
-                Thread.sleep(5000); // Wait for page to load
+                Thread.sleep(1000); // Wait for page to load
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -185,8 +188,12 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
 
                     double numericPrice = extractNumericPrice(price);
+
+
                     if (numericPrice <= query.getBudgetAmount()) {
                         productList.add(new ProductResult("jumia", title, price, link, imageUrl, ""));
+                        if (productList.size() >= 20) break;
+
                     }
 
                 } catch (Exception ex) {
@@ -200,7 +207,14 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
         driver.quit();
 
         // Sort results by price
-        productList.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+//        productList.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+        // Final sorting based on closeness to the budget (descending from budget)
+        productList.sort((a, b) -> {
+            double diffA = query.getBudgetAmount() - extractNumericPrice(a.getPrice());
+            double diffB = query.getBudgetAmount() - extractNumericPrice(b.getPrice());
+            return Double.compare(diffA, diffB);
+        });
+
 
 
         return productList;
@@ -490,4 +504,121 @@ public List<ProductResult> getFilteredProducts(Query query) {
             return Integer.MAX_VALUE; // In case of parse failure
         }
     }
+
+
+//    public List<ProductResult> handleHybridSearch(Query query) {
+//        // 1. Search DB cache
+//        List<ProductResult> cached = repository.findByTitleIgnoreCaseContainingAndNumericPriceLessThanEqualOrderByNumericPriceDesc(query.getQuery(), query.getBudgetAmount());
+//
+//        if (!cached.isEmpty()) {
+//            return cached;
+//        }else{
+//
+//        }
+//
+//        // 2. If not in DB, scrape from Jumia
+//        List<ProductResult> jumiaResults = scrapeJumia(query);
+//
+//        if (!jumiaResults.isEmpty()) {
+//            // Save to DB for caching
+////            jumiaResults.forEach(p -> p.setQuery(query.getQuery()));
+//            repository.saveAll(jumiaResults);
+//            return jumiaResults;
+//        }
+//
+//        // 3. Fallback: scrape other sources
+//        List<ProductResult> otherResults = new ArrayList<>();
+//        otherResults.addAll(scrapeKonga(query));
+//        otherResults.addAll(scrapeJiji(query));
+//        otherResults.addAll(scrapeKusnap(query));
+//
+//        if (!otherResults.isEmpty()) {
+////            otherResults.forEach(p -> p.setQuery(query.getQuery()));
+//            repository.saveAll(otherResults);
+//        }
+//
+//        return otherResults;
+//    }
+
+    private Double parsePrice(String priceStr) {
+        try {
+            // Remove "₦", commas, and whitespace
+            String clean = priceStr.replaceAll("[^\\d.]", "");
+            return Double.parseDouble(clean);
+        } catch (Exception e) {
+            return Double.MAX_VALUE; // Put invalid price entries at the end
+        }
+    }
+
+
+    public List<ProductResult> handleSearchQueries(Query query) {
+        Double targetPrice = query.getBudgetAmount();
+        List<ProductResult> productResults = new ArrayList<>();
+
+        // 1. Try DB cache
+        List<ProductResult> cached = repository.findByTitleContainingIgnoreCase(
+                query.getQuery()
+        );
+
+        if (!cached.isEmpty()) {
+            return cached;
+        }else{
+            List<ProductResult> jijiResults = scrapeJiji(query);
+            repository.saveAll(jijiResults);
+            for (ProductResult product : jijiResults) {
+                if (product.getPrice().equals(targetPrice.toString())) {
+                    productResults.add(product);
+                    return List.of(product);
+                }
+            }
+
+            // 3. Try Jumia
+            List<ProductResult> jumiaResults = scrapeJumia(query);
+            repository.saveAll(jumiaResults);
+            for (ProductResult product : jumiaResults) {
+                if (product.getPrice().equals(targetPrice.toString())) {
+                    productResults.add(product);
+                    return List.of(product);
+                }
+            }
+
+            // 4. Try Konga
+//            List<ProductResult> kongaResults = scrapeKonga(query);
+//            repository.saveAll(kongaResults);
+//            for (ProductResult product : kongaResults) {
+//                if (product.getPrice().equals(targetPrice.toString())) {
+//                    return List.of(product);
+//                }
+//            }
+
+            // 5. Try Kusnap
+            List<ProductResult> kusnapResults = scrapeKusnap(query);
+            repository.saveAll(kusnapResults);
+            for (ProductResult product : kusnapResults) {
+                if (product.getPrice().equals(targetPrice.toString())) {
+                    productResults.add(product);
+                    return List.of(product);
+                }
+            }
+        }
+
+        double tolerance = 0.1; // 10%
+        double min = targetPrice * (1 - tolerance);
+        double max = targetPrice * (1 + tolerance);
+
+        List<ProductResult> filtered = productResults.stream()
+                .filter(p -> {
+                    Double price = parsePrice(p.getPrice());
+                    return price >= min && price <= max;
+                })
+                .sorted(Comparator.comparing(p -> parsePrice(p.getPrice())))
+                .collect(Collectors.toList());
+
+        return filtered;
+
+        // 6. If all fail, return empty list
+//        return productResults;
+    }
+
+
 }

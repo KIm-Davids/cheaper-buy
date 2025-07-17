@@ -2,13 +2,18 @@ package com.packages.scraperapi.models;
 
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
 public class ProductResult {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String platform;
     private String title;
@@ -16,6 +21,10 @@ public class ProductResult {
     private String link;
     private String image;
     private String description;
+    private LocalDateTime createdAt = LocalDateTime.now();
+    private String query;
+    private Double numericPrice;
+
 
     public ProductResult(String platform, String title, String price, String link, String image, String description) {
         this.platform = platform;
@@ -36,6 +45,10 @@ public class ProductResult {
                 ", image='" + image + '\'' +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    public void setNumericPrice(double numericPrice) {
+        this.numericPrice = numericPrice;
     }
 
     public String getImage() {
