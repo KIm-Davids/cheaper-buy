@@ -16,4 +16,4 @@ COPY src ./src
 RUN mvn clean install -DskipTests || cat target/surefire-reports/*.txt || true
 
 # Run the app
-CMD ["java", "-jar", "target/ScraperEndpointz-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "target/ScraperEndpoint-0.0.1-SNAPSHOT.jar"]
