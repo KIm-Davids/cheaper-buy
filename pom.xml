@@ -98,6 +98,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
+    <build>
+        <finalName>ScraperEndpointApplication</finalName>
+    </build>
 
 </project>
