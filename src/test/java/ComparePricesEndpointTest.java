@@ -4,15 +4,12 @@ import com.packages.scraperapi.repository.ProductRepository;
 import com.packages.scraperapi.services.ComparePricesServicesImpl;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull; // ✅ keep this
 
 @SpringBootTest
 public class ComparePricesEndpointTest {
@@ -33,7 +30,8 @@ public class ComparePricesEndpointTest {
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.scrapeJumia(query);
         System.out.println(result);
-        assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+
     }
 
     @Test
@@ -43,7 +41,7 @@ public class ComparePricesEndpointTest {
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.scrapeJiji(query);
         System.out.println(result);
-        assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
     }
 
     @Test
@@ -53,7 +51,7 @@ public class ComparePricesEndpointTest {
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.scrapeKonga(query);
         System.out.println(result);
-        assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
     }
 
     @Test
@@ -63,7 +61,7 @@ public class ComparePricesEndpointTest {
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.scrapeKusnap(query);
         System.out.println(result);
-        assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
     }
 
     @Test
@@ -73,7 +71,7 @@ public class ComparePricesEndpointTest {
         query.setBudgetAmount(250000);
         List<ProductResult> result = services.getFilteredProducts(query);
         System.out.println(result);
-        assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
     }
 }
 
