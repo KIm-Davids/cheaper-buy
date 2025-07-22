@@ -16,6 +16,8 @@ public class WebConfig {
                         .allowedOrigins("https://smartpriceng.vercel.app")
                         .allowedMethods("*")
                         .allowedHeaders("*");
+                System.out.println("CORS configuration applied");
+
             }
         };
     }
