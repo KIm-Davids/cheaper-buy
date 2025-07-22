@@ -15,8 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api")
+@CrossOrigin(origins = "https://smartpriceng.vercel.app")
 public class ScraperController {
 
     private ComparePricesServicesImpl services;
