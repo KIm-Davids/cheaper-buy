@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class ScraperController {
 
     private ComparePricesServicesImpl services;
@@ -24,7 +24,7 @@ public class ScraperController {
         this.services = services;
     }
 
-    @PostMapping("/compare")
+    @PostMapping("/")
     public ResponseEntity<?> queryEndpoint(@RequestBody Query query){
         try{
             List<ProductResult> response = services.handleSearchQueries(query);
