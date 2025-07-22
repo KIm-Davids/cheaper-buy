@@ -1,4 +1,4 @@
-package com.semicolon.africa.config;
+package com.packages.scraperapi.controller;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
