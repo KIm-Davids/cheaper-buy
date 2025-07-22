@@ -12,7 +12,7 @@ public class WebConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
         config.addAllowedOrigin("https://smartpriceng.vercel.app");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
