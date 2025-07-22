@@ -1,16 +1,26 @@
-# Use official Java 21 image
-FROM eclipse-temurin:21-jdk
+FROM maven:3.9.6-eclipse-temurin-21 as build
 
-# Set the working directory
 WORKDIR /app
 
-# Install required dependencies for Chrome and Maven
+# Copy pom.xml and install dependencies first
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copy the actual source code
+COPY src ./src
+
+# Build your app
+RUN mvn clean install -DskipTests
+
+# ---- Runtime Stage ----
+FROM eclipse-temurin:21-jdk
+
+# Install Chrome and dependencies
 RUN apt-get update && apt-get install -y \
-    maven \
     wget \
     curl \
+    gnupg \
     unzip \
-    gnupg2 \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -25,39 +35,30 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     xdg-utils \
-    --no-install-recommends
+    libu2f-udev \
+    libvulkan1 \
+    libxss1 \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt install -y ./google-chrome-stable_current_amd64.deb && \
+    dpkg -i google-chrome-stable_current_amd64.deb || apt-get -fy install && \
     rm google-chrome-stable_current_amd64.deb
 
-# Install ChromeDriver
-RUN CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
-    wget -N https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
-    unzip chromedriver_linux64.zip && \
-    mv chromedriver /usr/bin/chromedriver && \
+# Install ChromeDriver (match Chrome version)
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') && \
+    CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | grep -oP "\"$CHROME_VERSION\.[0-9]+\"" | head -n 1 | tr -d '"') && \
+    wget -O chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip && \
+    unzip chromedriver.zip && \
+    mv chromedriver-linux64/chromedriver /usr/bin/chromedriver && \
     chmod +x /usr/bin/chromedriver && \
-    rm chromedriver_linux64.zip
+    rm -rf chromedriver.zip chromedriver-linux64
 
-# Set environment variables for Selenium
-ENV CHROME_BIN="/usr/bin/google-chrome"
-ENV CHROMEDRIVER="/usr/bin/chromedriver"
+WORKDIR /app
 
-# Copy Maven config
-COPY pom.xml .
+COPY --from=build /app/target/ScraperEndpoint-1.0-SNAPSHOT.jar ./app.jar
 
-# Pre-download dependencies
-RUN mvn dependency:go-offline
+EXPOSE 8080
 
-# Copy the rest of the source code
-COPY src ./src
-
-# Build the application
-RUN mvn clean install -DskipTests || cat target/surefire-reports/*.txt || true
-
-# Expose the port your Spring Boot app runs on
-EXPOSE 8079
-
-# Run the application
-CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
+CMD ["java", "-jar", "app.jar"]
