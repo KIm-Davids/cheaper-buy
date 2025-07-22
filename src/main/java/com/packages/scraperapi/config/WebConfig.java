@@ -1,4 +1,4 @@
-package com.packages.scraperapi.controller;
+package com.packages.scraperapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
