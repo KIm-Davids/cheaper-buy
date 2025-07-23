@@ -18,56 +18,46 @@
 ## Run the app
 #CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
 
-
 FROM eclipse-temurin:17-jdk
 
-# Environment setup
 ENV DEBIAN_FRONTEND=noninteractive
+ENV CHROME_BIN=/opt/chrome/chrome
 
-# Install Chrome dependencies and headless Chrome
+# Install minimal dependencies for headless Chrome
 RUN apt-get update && apt-get install -y \
+    wget \
     curl \
     unzip \
-    gnupg \
-    ca-certificates \
-    fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
     libnss3 \
     libx11-xcb1 \
     libxcomposite1 \
     libxdamage1 \
     libxrandr2 \
-    xdg-utils \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
     libgbm-dev \
-    wget \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Chrome directly from stable URL
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Download and install Chrome for Testing
+RUN wget -O chrome-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.114/linux64/chrome-linux64.zip && \
+    unzip chrome-linux64.zip && \
+    mv chrome-linux64 /opt/chrome && \
+    ln -s /opt/chrome/chrome /usr/bin/google-chrome && \
+    rm chrome-linux64.zip
 
-ENV CHROME_BIN=/usr/bin/google-chrome
-
-# Set working directory
+# Set workdir
 WORKDIR /app
 
-# Copy code
+# Copy your app
 COPY . .
 
-# Give permission to mvnw
+# Make Maven wrapper executable
 RUN chmod +x mvnw
 
-# Build the project
+# Build project
 RUN ./mvnw clean install -DskipTests
 
-# Run the app
+# Run app
 CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
