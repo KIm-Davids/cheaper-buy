@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.stereotype.Service;
 
 
@@ -31,8 +32,15 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
     @Override
     public List<ProductResult> scrapeJiji(Query query) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new"); // or just "--headless" if needed
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+
+        WebDriver driver = new ChromeDriver(options);
+
         WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver();
+//        WebDriver driver = new ChromeDriver();
 
         List<ProductResult> productResultList = new ArrayList<>();
         int page = 1;
@@ -156,8 +164,17 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 //    }
     @Override
     public List<ProductResult> scrapeJumia(Query query) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new"); // or just "--headless" if needed
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+
+        WebDriver driver = new ChromeDriver(options);
+
         WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver();
+//        WebDriver driver = new ChromeDriver();
+
+        WebDriverManager.chromedriver().setup();
         List<ProductResult> productList = new ArrayList<>();
         int page = 1;
         int maxPages = 5;
@@ -222,8 +239,14 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
     @Override
     public List<ProductResult> scrapeKonga(Query query) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new"); // or just "--headless" if needed
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+
         WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver();
+        WebDriver driver = new ChromeDriver(options);
+
         List<ProductResult> results = new ArrayList<>();
         int page = 1;
         int maxPages = 5;
@@ -347,8 +370,14 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
     @Override
     public List<ProductResult> scrapeKusnap(Query query) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new"); // or just "--headless" if needed
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+
         WebDriverManager.chromedriver().setup();
-        WebDriver driver = new ChromeDriver();
+        WebDriver driver = new ChromeDriver(options);
+
         List<ProductResult> productList = new ArrayList<>();
         int page = 1;
         int maxPages = 5;
