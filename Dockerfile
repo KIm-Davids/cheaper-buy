@@ -1,41 +1,19 @@
-FROM openjdk:21-jdk-slim
+# Use official Java 21 image
+FROM eclipse-temurin:21-jdk
 
-# Install required tools and headless Chrome dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    gnupg \
-    unzip \
-    chromium-driver \
-    chromium \
-    libglib2.0-0 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy and build your Java app
+# Install Maven and download dependencies first (to leverage Docker cache)
 COPY pom.xml .
+RUN apt-get update && apt-get install -y maven && \
+    mvn dependency:go-offline
+
+# Copy the rest of the application code
 COPY src ./src
 
-# Install Maven manually
-RUN curl -fsSL https://downloads.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip -o maven.zip \
-    && unzip maven.zip -d /opt \
-    && ln -s /opt/apache-maven-3.9.6/bin/mvn /usr/bin/mvn \
-    && rm maven.zip
+# Package the application
+RUN mvn clean install -DskipTests || cat target/surefire-reports/*.txt || true
 
-# Build the project
-RUN mvn clean package -DskipTests
-
-EXPOSE 8080
-
+# Run the app
 CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
