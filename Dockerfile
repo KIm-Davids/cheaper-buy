@@ -17,47 +17,34 @@
 #
 ## Run the app
 #CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
+# Use Selenium base image with Chrome already installed
 
-FROM eclipse-temurin:17-jdk
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV CHROME_BIN=/opt/chrome/chrome
+FROM selenium/standalone-chrome:119.0
 
-# Install minimal dependencies for headless Chrome
+USER root
+
+# Install Java and Maven
 RUN apt-get update && apt-get install -y \
-    wget \
     curl \
     unzip \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libgbm-dev \
+    maven \
+    openjdk-17-jdk \
     --no-install-recommends && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Download and install Chrome for Testing
-RUN wget -O chrome-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.114/linux64/chrome-linux64.zip && \
-    unzip chrome-linux64.zip && \
-    mv chrome-linux64 /opt/chrome && \
-    ln -s /opt/chrome/chrome /usr/bin/google-chrome && \
-    rm chrome-linux64.zip
-
-# Set workdir
+# Set working directory
 WORKDIR /app
 
-# Copy your app
+# Copy source files into container
 COPY . .
 
-# Make Maven wrapper executable
-RUN chmod +x mvnw
+# Make Maven wrapper executable (if used)
+RUN chmod +x mvnw || true
 
-# Build project
-RUN ./mvnw clean install -DskipTests
+# Build project using Maven wrapper if present, fallback to system mvn
+RUN if [ -f "./mvnw" ]; then ./mvnw clean install -DskipTests; else mvn clean install -DskipTests; fi
 
-# Run app
+# Define command to run the app
 CMD ["java", "-jar", "target/ScraperEndpoint-1.0-SNAPSHOT.jar"]
