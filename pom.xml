@@ -135,6 +135,16 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+
             <!-- Spring Boot Plugin: packages dependencies inside the final JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
