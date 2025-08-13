@@ -37,6 +37,7 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
+//        WebDriverManager.chromedriver().browserVersion("131.0.6778.85").setup();
         WebDriver driver = new ChromeDriver(options);
 
         WebDriverManager.chromedriver().setup();

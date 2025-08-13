@@ -65,6 +65,8 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y google-chrome-stable=131.0.6778.85-1
+
 # 4️⃣ Set working directory inside container
 WORKDIR /app
 
