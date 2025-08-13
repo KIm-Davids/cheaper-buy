@@ -65,7 +65,6 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y google-chrome-stable=131.0.6778.85-1
 
 # 4️⃣ Set working directory inside container
 WORKDIR /app
@@ -73,6 +72,13 @@ WORKDIR /app
 # 5️⃣ Copy Maven files first for dependency caching
 COPY pom.xml .
 RUN mvn dependency:go-offline
+
+RUN apt-get update && apt-get install -y firefox-esr
+RUN apt-get install -y wget && \
+    wget https://github.com/mozilla/geckodriver/releases/download/v0.35.0/geckodriver-v0.35.0-linux64.tar.gz && \
+    tar -xvzf geckodriver-v0.35.0-linux64.tar.gz && \
+    mv geckodriver /usr/local/bin/
+
 
 # 6️⃣ Copy project source code
 COPY src ./src

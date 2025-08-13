@@ -12,6 +12,8 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.springframework.stereotype.Service;
 
 
@@ -31,17 +33,102 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
     }
 
     @Override
+//    public List<ProductResult> scrapeJiji(Query query) {
+//        ChromeOptions options = new ChromeOptions();
+//        options.addArguments("--headless=new"); // or just "--headless" if needed
+//        options.addArguments("--no-sandbox");
+//        options.addArguments("--disable-dev-shm-usage");
+//
+//        WebDriverManager.chromedriver().browserVersion("131.0.6778.85").setup();
+//        WebDriver driver = new ChromeDriver(options);
+//
+//        WebDriverManager.chromedriver().setup();
+////        WebDriver driver = new ChromeDriver();
+//
+//        List<ProductResult> productResultList = new ArrayList<>();
+//        int page = 1;
+//        int maxPages = 5;
+//
+//        while (page <= maxPages) {
+//            String searchUrl = "https://jiji.ng/search?query=" + query.getQuery().replace(" ", "+") + "&page=" + page;
+//            driver.get(searchUrl);
+//
+//            try {
+//                Thread.sleep(1000); // Let the page load
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//
+//            Document doc = Jsoup.parse(driver.getPageSource());
+//            Elements productCards = doc.select("div.b-list-advert__gallery__item.js-advert-list-item");
+//
+//            if (productCards.isEmpty()) break;
+//
+//            for (Element card : productCards) {
+//                // Link
+//                Element linkTag = card.selectFirst("a[href]");
+//                if (linkTag == null) continue;
+//                String fullLink = "https://jiji.ng" + linkTag.attr("href");
+//
+//                // Title
+//                String title = card.selectFirst(".b-advert-title-inner.qa-advert-title") != null
+//                        ? card.selectFirst(".b-advert-title-inner.qa-advert-title").text()
+//                        : "No title";
+//
+//                // Price
+//                String price = card.selectFirst(".qa-advert-price") != null
+//                        ? card.selectFirst(".qa-advert-price").text()
+//                        : "No price";
+//
+//                // Description
+//                String description = card.selectFirst(".b-list-advert-base__description-text") != null
+//                        ? card.selectFirst(".b-list-advert-base__description-text").text()
+//                        : "No description";
+//
+//                // Image
+//                Element imageTag = card.selectFirst("picture img");
+//                String imageUrl = imageTag != null ? imageTag.attr("src") : "";
+//
+//                double numericPrice = extractNumericPrice(price);
+//
+//                if (numericPrice >= query.getBudgetAmount()) {
+//                    ProductResult result = new ProductResult(
+//                            "jiji", title, price, fullLink, imageUrl, description
+//                    );
+//                    productResultList.add(result);
+//                    if (productResultList.size() >= 20) break;
+//
+//                }
+//            }
+//
+//            productResultList.sort((a, b) -> {
+//                double diffA = query.getBudgetAmount() - extractNumericPrice(a.getPrice());
+//                double diffB = query.getBudgetAmount() - extractNumericPrice(b.getPrice());
+//                return Double.compare(diffA, diffB);
+//            });
+//
+//
+//            page++;
+//        }
+//
+//        driver.quit();
+//
+//        // Sort by price ascending
+//        productResultList.sort(Comparator.comparingDouble(p -> extractNumericPrice(p.getPrice())));
+//
+//        return productResultList;
+//    }
+
     public List<ProductResult> scrapeJiji(Query query) {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new"); // or just "--headless" if needed
+        // Set Firefox options for headless scraping
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("--headless");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
-//        WebDriverManager.chromedriver().browserVersion("131.0.6778.85").setup();
-        WebDriver driver = new ChromeDriver(options);
-
-        WebDriverManager.chromedriver().setup();
-//        WebDriver driver = new ChromeDriver();
+        // Setup WebDriverManager for Firefox
+        WebDriverManager.firefoxdriver().setup();
+        WebDriver driver = new FirefoxDriver(options);
 
         List<ProductResult> productResultList = new ArrayList<>();
         int page = 1;
@@ -95,7 +182,6 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
                     );
                     productResultList.add(result);
                     if (productResultList.size() >= 20) break;
-
                 }
             }
 
@@ -104,7 +190,6 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
                 double diffB = query.getBudgetAmount() - extractNumericPrice(b.getPrice());
                 return Double.compare(diffA, diffB);
             });
-
 
             page++;
         }
@@ -116,6 +201,7 @@ public class ComparePricesServicesImpl implements ComparePricesServicesInterface
 
         return productResultList;
     }
+
 
 //    @Override
 //    public ProductResult scrapeJumia(Query query) {
